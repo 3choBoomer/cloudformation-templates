@@ -1,0 +1,188 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Creates ASG with Specified Min, Max, and desired capacity in each specified subnet",
+    "Parameters": {
+        "environmentName": {
+            "Description": "Target deployment environment (ci, qa, perf, demo, prod)",
+            "Type": "String",
+            "AllowedValues": [
+              "ci",
+              "qa",
+              "perf",
+              "demo",
+              "prod"
+            ],
+            "Default": "ci"
+        },
+        "branchName": {
+            "Description": "Name of the branch",
+            "Type": "String",
+            "Default": "master"
+        },
+        "repoName": {
+            "Description": "Name of the repo this stack is deploying on behalf of",
+            "Type": "String",
+            "Default": "elbDemo"
+        },
+        "maxSizeASG": {
+            "Description": "Max Size for the ASG",
+            "Type": "String",
+            "Default": "10"
+        },
+        "minSizeASG": {
+            "Description": "Min Size for the ASG",
+            "Type": "String",
+            "Default": "2"
+        },
+        "desiredCapacityASG": {
+            "Description": "The desired capacity for the ASG",
+            "Type": "String",
+            "Default": "2"
+        },
+        "vpcZoneIdentifiers": {
+            "Description": "List the Subnet Ids of the instances",
+            "Type": "CommaDelimitedList"
+        },
+        "keyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+        },
+        "instanceType": {
+            "Description": "EC2 instance type",
+            "Type": "String",
+            "Default": "t2.micro"
+        },
+        "instanceSecurityGroups": {
+            "Description": "List of Security Group IDs",
+            "Type": "CommaDelimitedList"
+        }
+    },
+    "Mappings": {
+        "RegionMap": {
+            "us-east-1": {
+                "HVM64": "ami-0ff8a91507f77f867"
+            },
+            "us-west-1": {
+                "HVM64": "ami-0bdb828fd58c52235"
+            },
+            "us-east-2": {
+                "HVM64": "ami-0e38b48473ea57778"
+            }
+        }
+    },
+    "Resources": {
+        "AutoScalingGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "AutoScalingGroupName": {
+                    "Fn::Join": [
+                    "-",
+                    [
+                      {
+                        "Ref": "environmentName"
+                      },
+                      {
+                        "Ref": "branchName"
+                      },
+                      {
+                        "Ref": "repoName"
+                      },
+                      "ASG"
+                    ]
+                  ]
+                },
+                "Cooldown": 120,
+                "DesiredCapacity": {
+                    "Ref": "desiredCapacityASG"
+                },
+                "LaunchConfigurationName": {
+                    "Ref": "LaunchConfig"
+                },
+                "MaxSize": {
+                    "Ref": "maxSizeASG"
+                },
+                "MinSize": {
+                    "Ref": "minSizeASG"
+                },
+                "Tags": [
+                    {
+                        "Key": "environmentName",
+                        "Value":{ 
+                            "Ref": "environmentName"
+                        },
+                        "PropagateAtLaunch": "true"
+                    },
+                    {
+                        "Key": "branchName",
+                        "Value":{ 
+                            "Ref": "branchName"
+                        },
+                        "PropagateAtLaunch": "true"
+                    },
+                    {
+                        "Key": "repoName",
+                        "Value":{ 
+                            "Ref": "repoName"
+                        },
+                        "PropagateAtLaunch": "true"
+                    }
+                ],
+                "VPCZoneIdentifier": { "Ref": "vpcZoneIdentifiers" }
+            }
+        },
+        "LaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "KeyName": {
+                    "Ref": "keyName"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "RegionMap",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "HVM64"
+                    ]
+                },
+                "SecurityGroups": { "Ref": "instanceSecurityGroups" },
+                "InstanceType": {
+                    "Ref": "instanceType"
+                },
+                "LaunchConfigurationName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                          {
+                            "Ref": "environmentName"
+                          },
+                          {
+                            "Ref": "branchName"
+                          },
+                          {
+                            "Ref": "repoName"
+                          },
+                          "LaunchConfig"
+                        ]
+                    ]
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "AutoscalingGroup": {
+            "Description": "The newly created asg",
+            "Value": {
+                "Ref": "AutoScalingGroup"
+            }
+        },
+        "LaunchConfig": {
+            "Description": "the newly created launch config",
+            "Value": {
+                "Ref": "LaunchConfig"
+            }
+        }
+    },
+    
+}

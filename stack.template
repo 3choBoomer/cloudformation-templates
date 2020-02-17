@@ -1,0 +1,98 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Basic ELB -> ASG -> Redis stack",
+    "Metadata": {
+
+    },
+    "Parameters": {
+        "environmentName": {
+            "Description": "Target deployment environment (ci, qa, perf, demo, prod)",
+            "Type": "String",
+            "AllowedValues": [
+              "ci",
+              "qa",
+              "perf",
+              "demo",
+              "prod"
+            ],
+            "Default": "ci"
+          },
+          "branchName": {
+            "Description": "Name of the branch",
+            "Type": "String",
+            "Default": "master"
+          },
+          "repoName": {
+            "Description": "Name of the repo this stack is deploying on behalf of",
+            "Type": "String",
+            "Default": "elbDemo"
+          },
+          "vpcZoneIdentifiers": {
+            "Description": "List the Subnet Ids of the instances",
+            "Type": "List<AWS::EC2::Subnet::Id>"
+          },
+          "instanceSecurityGroups": {
+            "Description": "List of Security Group IDs",
+            "Type": "List<AWS::EC2::SecurityGroup::Id>"
+          },
+          "keyName": {
+            "Description": "Name of the key pair to use on the ASG instances",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+          },
+          "templatePath": {
+            "Description": "s3 Path to templates.",
+            "Type": "String"
+          }
+    },
+    "Mappings": {
+
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+        "AutoScalingGroup": {
+         "Type": "AWS::CloudFormation::Stack",
+         "Properties": {
+            "Parameters": {
+                "keyName" : {
+                    "Ref" : "keyName"
+                },
+                "vpcZoneIdentifiers": {
+                    "Fn::Join": [
+                        ",",
+                        {
+                            "Ref": "vpcZoneIdentifiers"
+                        }
+                    ]
+                },
+                "instanceSecurityGroups":{
+                    "Fn::Join": [
+                        ",",
+                        {
+                            "Ref": "instanceSecurityGroups"
+                        }
+                    ]
+                }            
+            },
+            "TemplateURL": {
+                "Fn::Join": [
+                  "/",
+                  [
+                    {
+                      "Ref": "templatePath"
+                    },
+                    "asg.template"
+                  ]
+                ]
+              }
+         }
+        }
+        
+
+    },
+    "Outputs": {
+
+    }
+}
