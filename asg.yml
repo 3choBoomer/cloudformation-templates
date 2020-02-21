@@ -175,9 +175,17 @@ Resources:
           - !Ref branchName
           - !Ref repoName
           - LaunchConfig
+  AsgUrlSSMParameter:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub "/${environmentName}-${branchName}-${repoName}/Uri"
+      Value: !GetAtt
+          - ApplicationLoadBalancer
+          - DNSName
+      Description: "URI of the ${environmentName}-${branchName}-${repoName} Service"
 Outputs:
   URL:
-    Description: URL of the website
+    Description: URI of the service
     Value: !Join
       - ""
       - - "http://"
