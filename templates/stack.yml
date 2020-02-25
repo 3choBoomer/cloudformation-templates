@@ -1,7 +1,8 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Basic ELB -> ASG -> Redis stack
-Metadata: {}
+
 Parameters:
+
   environmentName:
     Description: 'Target deployment environment (ci, qa, perf, demo, prod)'
     Type: String
@@ -12,42 +13,52 @@ Parameters:
       - demo
       - prod
     Default: ci
+
   branchName:
     Description: Name of the branch
     Type: String
     Default: master
+
   repoName:
     Description: Name of the repo this stack is deploying on behalf of
     Type: String
     Default: elbDemo
-  vpcZoneIdentifiers:
+
+  subnetIds:
     Description: List the Subnet Ids of the instances
     Type: 'List<AWS::EC2::Subnet::Id>'
+
   instanceSecurityGroups:
     Description: List of Security Group IDs
     Type: 'List<AWS::EC2::SecurityGroup::Id>'
+
   vpcId:
     Description: The VPC ID
     Type: 'AWS::EC2::VPC::Id'
+
   keyName:
     Description: Name of the key pair to use on the ASG instances
     Type: 'AWS::EC2::KeyPair::KeyName'
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
   templatePath:
     Description: s3 Path to templates.
     Type: String
-Mappings: {}
-Conditions: {}
+
 Resources:
+
   AutoScalingGroup:
     Type: 'AWS::CloudFormation::Stack'
     Properties:
       Parameters:
         keyName: !Ref keyName
+        environmentName: !Ref environmentName
+        branchName: !Ref branchName
+        repoName: !Ref repoName
         vpcId: !Ref vpcId
-        vpcZoneIdentifiers: !Join 
+        subnetIds: !Join 
           - ','
-          - !Ref vpcZoneIdentifiers
+          - !Ref subnetIds
         instanceSecurityGroups: !Join 
           - ','
           - !Ref instanceSecurityGroups
@@ -55,20 +66,19 @@ Resources:
         - /
         - - !Ref templatePath
           - asg.yml
-  # Redis:
-  #   Type: 'AWS::CloudFormation::Stack'
-  #   Properties:
-  #     Parameters:
-  #       keyName: !Ref keyName
-  #       vpcId: !Ref vpcId
-  #       vpcZoneIdentifiers: !Join 
-  #         - ','
-  #         - !Ref vpcZoneIdentifiers
-  #       instanceSecurityGroups: !Join 
-  #         - ','
-  #         - !Ref instanceSecurityGroups
-  #     TemplateURL: !Join 
-  #       - /
-  #       - - !Ref templatePath
-  #         - redis.yml
-Outputs: {}
+          
+  Redis:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      Parameters:
+        environmentName: !Ref environmentName
+        branchName: !Ref branchName
+        repoName: !Ref repoName
+        vpcId: !Ref vpcId
+        subnetIds: !Join 
+          - ','
+          - !Ref subnetIds
+      TemplateURL: !Join 
+        - /
+        - - !Ref templatePath
+          - redis.yml

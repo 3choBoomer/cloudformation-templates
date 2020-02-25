@@ -12,44 +12,52 @@ Parameters:
       - perf
       - demo
       - prod
-    Default: ci
+
   branchName:
     Description: Name of the branch
     Type: String
-    Default: master
+
   repoName:
     Description: Name of the repo this stack is deploying on behalf of
     Type: String
-    Default: elbDemo
+
   maxSizeASG:
     Description: Max Size for the ASG
     Type: String
     Default: "10"
+
   minSizeASG:
     Description: Min Size for the ASG
     Type: String
     Default: "2"
+
   desiredCapacityASG:
     Description: The desired capacity for the ASG
     Type: String
     Default: "2"
-  vpcZoneIdentifiers:
+
+  subnetIds:
     Description: List the Subnet Ids of the instances
     Type: CommaDelimitedList
+
   keyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: "AWS::EC2::KeyPair::KeyName"
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
   instanceType:
     Description: EC2 instance type
     Type: String
     Default: t2.micro
+
   instanceSecurityGroups:
     Description: List of Security Group IDs
     Type: CommaDelimitedList
+
   vpcId:
     Description: The VPC ID
     Type: "AWS::EC2::VPC::Id"
+
   sshLocation:
     Description: The IP address range that can be used to SSH to the EC2 instances
     Type: String
@@ -58,6 +66,7 @@ Parameters:
     Default: 0.0.0.0/0
     AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
     ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
 Mappings:
   RegionMap:
     us-east-1:
@@ -66,7 +75,9 @@ Mappings:
       HVM64: ami-0bdb828fd58c52235
     us-east-2:
       HVM64: ami-0e38b48473ea57778
+
 Resources:
+
   AutoScalingGroup:
     Type: "AWS::AutoScaling::AutoScalingGroup"
     UpdatePolicy:
@@ -100,18 +111,20 @@ Resources:
         - Key: repoName
           Value: !Ref repoName
           PropagateAtLaunch: "true"
-      VPCZoneIdentifier: !Ref vpcZoneIdentifiers
+      VPCZoneIdentifier: !Ref subnetIds
+
   ApplicationLoadBalancer:
     Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
     Properties:
-      Subnets: !Ref vpcZoneIdentifiers
+      Subnets: !Ref subnetIds
       Tags:
         - Key: environmentName
           Value: !Ref environmentName
         - Key: branchName
           Value: !Ref branchName
         - Key: repoName
-          Value: !Ref repoName      
+          Value: !Ref repoName
+
   ALBListener:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
@@ -121,6 +134,7 @@ Resources:
       LoadBalancerArn: !Ref ApplicationLoadBalancer
       Port: "80"
       Protocol: HTTP 
+
   ALBTargetGroup:
     Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
     Properties:
@@ -138,6 +152,7 @@ Resources:
           Value: !Ref branchName
         - Key: repoName
           Value: !Ref repoName 
+
   InstanceSecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
@@ -159,6 +174,7 @@ Resources:
           Value: !Ref branchName
         - Key: repoName
           Value: !Ref repoName 
+
   LaunchConfig:
     Type: "AWS::AutoScaling::LaunchConfiguration"
     Properties:
@@ -175,15 +191,19 @@ Resources:
           - !Ref branchName
           - !Ref repoName
           - LaunchConfig
+
   AsgUrlSSMParameter:
     Type: "AWS::SSM::Parameter"
     Properties:
       Name: !Sub "/${environmentName}-${branchName}-${repoName}/Uri"
+      Type: String
       Value: !GetAtt
           - ApplicationLoadBalancer
           - DNSName
       Description: "URI of the ${environmentName}-${branchName}-${repoName} Service"
+
 Outputs:
+
   URL:
     Description: URI of the service
     Value: !Join
@@ -192,9 +212,11 @@ Outputs:
         - !GetAtt
           - ApplicationLoadBalancer
           - DNSName
+
   AutoscalingGroup:
     Description: The newly created asg
     Value: !Ref AutoScalingGroup
+    
   LaunchConfig:
     Description: the newly created launch config
     Value: !Ref LaunchConfig
