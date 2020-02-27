@@ -20,3 +20,8 @@ A few cloudformation templates to create an AutoScalingGroup that uses Redis as 
 6. Observe the stack being created in the aws console.
 7. Delete the stack.
     1. eg  `./deleteStack.sh yourStackName` Note: `yourStackName` is only required if you supplied it in step 6.
+    
+## Bonus functionality 
+The main root stack takes 3 optional parameters that, combined with the stack name, would allow this stack to be used to create isolated stacks for each combination of environment/branch/repo. These values could be supplied via the build pipelines and/or artifacts.
+
+For example, the default values in the template will create a stack for `ci-master-elbDemo`. By providing other values here, we could create `demo-master-elbDemo` or `prod-master-elbDemo` or stacks for dev branches: `ci-superCoolFeature-elbDemo`
