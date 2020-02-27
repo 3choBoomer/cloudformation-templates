@@ -1,1 +1,2 @@
-aws cloudformation delete-stack --stack-name ci-master-elbDemo
+stackName=${1:-ci-master-elbDemo}
+aws cloudformation delete-stack --stack-name $stackName

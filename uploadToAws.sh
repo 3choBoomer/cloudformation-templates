@@ -1,1 +1,2 @@
-aws s3 cp ./templates/. s3://ndc-cf-templates/ --exclude "*" --include "*.yml" --recursive
+bucketName=${1:-ndc-cf-templates}
+aws s3 cp ./templates/. s3://$bucketName/ --exclude "*" --include "*.yml" --recursive
