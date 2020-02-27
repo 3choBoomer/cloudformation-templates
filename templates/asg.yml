@@ -2,6 +2,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: |
   Creates an ELB pointing to an ASG with Specified Min, Max, and desired capacity in each specified
   subnet
+
 Parameters:
   environmentName:
     Description: "Target deployment environment (ci, qa, perf, demo, prod)"
@@ -192,14 +193,44 @@ Resources:
           - !Ref repoName
           - LaunchConfig
 
+  ScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      Cooldown: 300
+      AutoScalingGroupName:
+        Ref: AutoScalingGroup
+      ScalingAdjustment: '1'
+  
+  CPUAlarmHigh:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Average
+      Threshold: '70'
+      AlarmDescription: Alarm if CPU too high or metric disappears indicating instance is down
+      Period: '60'
+      AlarmActions:
+      - Ref: ScaleUpPolicy
+      Namespace: AWS/EC2
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value:
+          Ref: AutoScalingGroup
+      ComparisonOperator: GreaterThanThreshold
+      MetricName: CPUUtilization
+
   AsgUrlSSMParameter:
     Type: "AWS::SSM::Parameter"
     Properties:
       Name: !Sub "/${environmentName}-${branchName}-${repoName}/Uri"
       Type: String
-      Value: !GetAtt
-          - ApplicationLoadBalancer
-          - DNSName
+      Value: !Join
+        - ""
+        - - "http://"
+          - !GetAtt
+            - ApplicationLoadBalancer
+            - DNSName
       Description: "URI of the ${environmentName}-${branchName}-${repoName} Service"
 
 Outputs:
