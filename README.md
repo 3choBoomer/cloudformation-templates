@@ -16,7 +16,7 @@ A few cloudformation templates to create an AutoScalingGroup that uses Redis as 
 4. Upload the templates to the S3 bucket created in step 2 by supplying the bucket name to the shell script.
      1. eg `./uploadToAws.sh yourS3BucketNameHere`
 5. `cat` the `createStack.sh` file to inspect how it works. Either provide the resources that you created above on the command line in the proper positions or edit the file and replace the defaults with your values.
-    1. eg `./createStack.sh yourS3BucketUrl yourSecurityGroupId(s) yourSubnetIds yourVpcId yourStackName(optional)`
+    1. eg `./createStack.sh yourS3BucketUrl yourSecurityGroupId(s) yourSubnetIds yourVpcId yourKeyPairName yourStackName(optional)`
 6. Observe the stack being created in the aws console.
 7. Delete the stack.
     1. eg  `./deleteStack.sh yourStackName` Note: `yourStackName` is only required if you supplied it in step 6.
